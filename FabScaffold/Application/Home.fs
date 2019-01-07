@@ -93,9 +93,13 @@ module View =
                          (text = title, backgroundColor = Color.LightBlue,
                           textColor = Color.Black, fontSize = 20),
                      [ for j in y do
-                           yield View.StackLayout(orientation = StackOrientation.Horizontal,
-                                                  children = [ avatar j
-                                                               detail j ]) ]) ]
+                           yield View.StackLayout
+                                     (orientation = StackOrientation.Vertical,
+                                      children = [ View.StackLayout
+                                                       (orientation = StackOrientation.Horizontal,
+                                                        children = [ avatar j
+                                                                     detail j ])
+                                                   View.Label(text = "     ") ]) ]) ]
 
     let search model dispatch =
         View.SearchBar
