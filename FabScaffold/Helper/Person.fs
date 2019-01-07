@@ -5,6 +5,8 @@ open System.Linq
 open Akavache
 open System.Reactive.Linq
 
+let [<Literal>] generatedPerson = 17
+
 type Gender =
     | Male = 0
     | Female = 1
@@ -162,7 +164,7 @@ let insertDummyData() =
         async { return! (PersonFaker() |> addOrUpdatePaitent) }
 #if DEBUG
     if (getPersonCount() |> Async.RunSynchronously) = 0 then
-        Seq.init 100 (fun i -> i)
+        Seq.init generatedPerson (fun i -> i)
         |> Seq.map (fun _ -> async { do! createDummyPerson() })
         |> Async.Parallel
         |> Async.Ignore

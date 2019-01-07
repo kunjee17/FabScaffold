@@ -25,30 +25,29 @@ module Types =
 module State =
     open Types
 
-
     let init (model : Model option) : Model * Cmd<Msg> =
         insertDummyData() //will only add for debug
         let res =
             match model with
             | Some m -> m
-            | None -> {   Persons = [||]
-                          FilteredPersons = [||]
-                          PersonCount = 0
-                          SearchText = ""
-                          IsLoaded = false }
-        res,
-        Cmd.ofAsyncMsg (async {
-                            let! p = getPersons()
-                            let! c = getPersonCount()
-                            return (UpdatePersons(p, c))
-                        })
+            | None ->
+                { Persons = [||]
+                  FilteredPersons = [||]
+                  PersonCount = 0
+                  SearchText = ""
+                  IsLoaded = false }
+        res, Cmd.ofAsyncMsg (async { let! p = getPersons()
+                                     let! c = getPersonCount()
+                                     return (UpdatePersons(p, c)) })
 
     let update msg model =
         match msg with
         | NewPerson _ -> model, Cmd.none //Captured outside
         | SelectedPersonId _ -> model, Cmd.none //Captured outside
         | UpdateSearch s ->
-            let res = if (String.IsNullOrEmpty s) then "" else s
+            let res =
+                if (String.IsNullOrEmpty s) then ""
+                else s
             { model with SearchText = res },
             Cmd.ofAsyncMsg (async {
                                 let! res = model.Persons
@@ -61,7 +60,8 @@ module State =
                             })
         | UpdatePersons(p, c) ->
             { model with Persons = p
-                         PersonCount = c }, Cmd.ofMsg (UpdateSearch model.SearchText)
+                         PersonCount = c },
+            Cmd.ofMsg (UpdateSearch model.SearchText)
         | SearchUpdated p ->
             { model with FilteredPersons = p
                          IsLoaded = true }, Cmd.none
@@ -72,8 +72,19 @@ module View =
     open Fabulous.DynamicViews
     open Xamarin.Forms
 
-
     let createPersonList (persons : (char * Person []) []) =
+        let avatar p =
+            View.StackLayout(children = [ View.Image(source = p.Avatar) ])
+
+        let detail p =
+            View.StackLayout(orientation = StackOrientation.Vertical,
+                             children = [ View.Label
+                                              ("Name: " + p.FirstName + " "
+                                               + p.LastName)
+
+                                          View.Label
+                                              ("Gender: " + p.Gender.ToString())
+                                          View.Label("Age: " + p.age()) ])
         [ for i in persons do
               let (x, y) = i
               let title = x.ToString()
@@ -82,7 +93,9 @@ module View =
                          (text = title, backgroundColor = Color.LightBlue,
                           textColor = Color.Black, fontSize = 20),
                      [ for j in y do
-                           yield View.Label(text = j.ToString()) ]) ]
+                           yield View.StackLayout(orientation = StackOrientation.Horizontal,
+                                                  children = [ avatar j
+                                                               detail j ]) ]) ]
 
     let search model dispatch =
         View.SearchBar
@@ -99,13 +112,12 @@ module View =
 
     let plist model dispatch =
         View.ListViewGrouped
-            (showJumpList = true,
+            (hasUnevenRows = true, rowHeight = -1, showJumpList = true,
              items = createPersonList model.FilteredPersons,
              itemTapped = (fun (x, y) ->
              let pg = model.FilteredPersons.[x]
              let (_, p) = pg
              p.[y].Id.ToString()
-
              |> SelectedPersonId
              |> dispatch), horizontalOptions = LayoutOptions.CenterAndExpand)
 
@@ -120,8 +132,7 @@ module View =
             .HasBackButton(false)
             .ToolbarItems([ View.ToolbarItem
                                 (text = "Add Person",
-                                 command = (fun () ->
-                                 NewPerson None |> dispatch))
+                                 command = (fun () -> NewPerson None |> dispatch))
 
                             View.ToolbarItem
                                 (text = "logout",
