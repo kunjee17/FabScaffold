@@ -6,11 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Global.fs" />
     <Compile Include="Helper\Database.fs" />
     <Compile Include="Helper\Helper.fs" />
     <Compile Include="Helper\Auth.fs" />
     <Compile Include="Helper\Person.fs" />
-    <Compile Include="FabScaffold.fs" />
+    <Compile Include="Application\PersonDetail.fs" />
+    <Compile Include="Application\AddOrEditPerson.fs" />
+    <Compile Include="Application\Home.fs" />
+    <Compile Include="Application\Application.fs" />
+    <Compile Include="Authentication\Login.fs" />
+    <Compile Include="Authentication\SignUp.fs" />
+    <Compile Include="Authentication\Authentication.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="State.fs" />
+    <Compile Include="View.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Xamarin.Forms" Version="3.4.0.1009999" />

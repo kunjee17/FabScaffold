@@ -2,7 +2,6 @@ module Helper
 
 open Global
 open Xamarin.Forms
-open Plugin.Toasts
 open Xamarin.Essentials
 
 [<Literal>]
@@ -26,10 +25,6 @@ let removeFirst (items : 'a list) =
     | [] -> []
     | [ _ ] -> []
     | _ :: t -> t
-
-let notificator = DependencyService.Get<IToastNotificator>()
-let notificationOptions title desc =
-    new NotificationOptions(Title = title, Description = desc)
 
 type PageDetail<'a> =
     { Page : AppPage
