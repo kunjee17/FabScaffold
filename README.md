@@ -13,8 +13,8 @@
 - All pages are stacked as part of Navigation page from Xamarin Forms
 
 ## Issues solved
-- List will not refresh every time you come back to page
-- Page data will be updated every time you come back to page
+- List will not fully refresh every time you come back to page
+- Page data including list will be updated every time you come back to page
 - Extendable architecture to allow big business application to graw in **Lego** fashion.
 - Every data access is pushed to Thread pool for maximum performance. *Be careful you might need to switch back to UI thread of UI thread related stuff. *
 - UI it totally non-blocking.
