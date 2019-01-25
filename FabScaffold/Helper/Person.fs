@@ -5,7 +5,7 @@ open System.Linq
 open Akavache
 open System.Reactive.Linq
 
-let [<Literal>] generatedPerson = 17
+let [<Literal>] generatedPerson = 50
 
 type Gender =
     | Male = 0

@@ -8,16 +8,23 @@ module Types =
         | ChangePassword of string
         | Login
         | LoggedIn
+        | UpdateError of string list
+
 
     type Model =
-        { Password : string }
+        { Password : string
+          Errs : string list
+           }
 
 module State =
     open Fabulous.Core
     open Types
     open Helper
 
-    let init() : Model * Cmd<Msg> = { Password = "" }, Cmd.none
+    let init() : Model * Cmd<Msg> =
+        { Password = ""
+          Errs = []
+           }, Cmd.none
 
     let update msg model =
         match msg with
@@ -26,29 +33,36 @@ module State =
             let p =
                 async {
                     let! isAuthenticated = checkCode model.Password
-                    if isAuthenticated then return LoggedIn
+                    if isAuthenticated then return [ LoggedIn ]
                     else
-                        //TODO: notifiy user that password is not correct
-                        return ChangePassword ""
+                        return [ ChangePassword ""
+
+                                 UpdateError
+                                     [ "Wrong Passcode please try again" ] ]
                 }
-            model, Cmd.ofAsyncMsg p
-        | LoggedIn -> model, Cmd.none
+            model, Helper.ofAsyncMsgList p
+        | LoggedIn -> { model with Errs = [] }, Cmd.none
+        | UpdateError s -> { model with Errs = s }, Cmd.none
+
 
 module View =
     open Fabulous.Core
     open Fabulous.DynamicViews
     open Xamarin.Forms
     open Types
+    open ViewHelper
 
     let root model dispatch =
         View.ContentPage
-            (title = "log in", backgroundColor = Color.AliceBlue,
+            (title = " Log In ",
              content = View.StackLayout
                            (padding = 30.0,
                             verticalOptions = LayoutOptions.Center,
-                            children = [ View.Entry
+                            children = [ toastLabels model.Errs Toast.Error
+
+                                         View.Entry
                                              (text = model.Password,
-                                              placeholder = "Enter Password",
+                                              placeholder = "Enter Passcode",
                                               textChanged = debounce DebounceNo (fun args ->
                                                                 args.NewTextValue
                                                                 |> ChangePassword
@@ -56,8 +70,9 @@ module View =
                                               isPassword = true)
 
                                          View.Button
-                                             (text = "Log in",
-                                              backgroundColor = Color.LightGreen,
+                                             (text = " Log in ",
+                                              backgroundColor = Color.CadetBlue,
+                                              textColor = Color.White,
                                               horizontalOptions = LayoutOptions.Center,
                                               command = (fun () ->
                                               dispatch Login)) ]))

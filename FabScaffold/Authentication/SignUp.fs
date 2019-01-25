@@ -4,6 +4,7 @@ open System
 open Fabulous.Core
 open Auth
 open Helper
+open ViewHelper
 
 module Types =
     type Msg =
@@ -11,23 +12,22 @@ module Types =
         | UpdateConfirmPassword of string
         | SubmitPassword
         | PasswordSubmitted
-        | CheckRegistration of bool
-        | PasswordCheckFailed
+        | PasswordCheckFailed of string list
 
     type Model =
         { Password : string
           ConfirmPassword : string
-          IsRegistered : bool }
+          IsRegistered : bool
+          Errs : string list }
 
 module State =
     open Types
 
-    let init() : Model * Cmd<Msg> =
+    let init (errs) : Model * Cmd<Msg> =
         { Password = ""
           ConfirmPassword = ""
-          IsRegistered = false },
-        Cmd.ofAsyncMsg (async { let! r = isCodeRegistered()
-                                return CheckRegistration r })
+          IsRegistered = false
+          Errs = errs }, Cmd.none
 
     let update msg model =
         match msg with
@@ -38,9 +38,12 @@ module State =
             if (String.IsNullOrWhiteSpace model.Password)
                || (String.IsNullOrWhiteSpace model.ConfirmPassword)
                || (model.Password <> model.ConfirmPassword) then
-                model, Cmd.ofAsyncMsg (async {
-                                               //TODO: Show notification that password is failed
-                                               return PasswordCheckFailed })
+                model,
+                Cmd.ofAsyncMsg
+                    (async
+                         {
+                         return PasswordCheckFailed
+                                    [ "Either one of the field is empty or Both are not same. Please Try Again!" ] })
             else
                 model,
                 Cmd.ofAsyncMsg (async {
@@ -48,15 +51,14 @@ module State =
                                     return PasswordSubmitted
                                 })
         | PasswordSubmitted ->
-            let p = async { return CheckRegistration true }
-            model, Cmd.ofAsyncMsg p
-        | CheckRegistration r -> { model with IsRegistered = r }, Cmd.none
-        | PasswordCheckFailed -> init()
+            { model with Errs = [] }, Cmd.none
+        | PasswordCheckFailed errs -> init (errs)
 
 module View =
     open Fabulous.DynamicViews
     open Xamarin.Forms
     open Types
+    open ViewHelper
 
     let registered() =
         View.StackLayout
@@ -66,13 +68,21 @@ module View =
     let signUpScreen model dispatch =
         View.StackLayout
             (padding = 30.0, verticalOptions = LayoutOptions.Center,
-             children = [ View.Entry
+             children = [
+                          View.Label
+                              (text = "Please register your pass code here.",
+                               horizontalTextAlignment = TextAlignment.Center,
+                               textColor = Color.DeepSkyBlue)
+
+                          toastLabels model.Errs Toast.Error
+
+                          View.Entry
                               (text = model.Password,
                                textChanged = debounce DebounceNo (fun args ->
                                                  args.NewTextValue
                                                  |> UpdatePassword
                                                  |> dispatch),
-                               placeholder = "Set Password", isPassword = true)
+                               placeholder = "Set Pass Code", isPassword = true)
 
                           View.Entry
                               (text = model.ConfirmPassword,
@@ -80,16 +90,17 @@ module View =
                                                  args.NewTextValue
                                                  |> UpdateConfirmPassword
                                                  |> dispatch),
-                               placeholder = "Confirm Password",
+                               placeholder = "Confirm Pass Code",
                                isPassword = true)
 
                           View.Button
-                              (text = "Submit",
-                               backgroundColor = Color.LightGreen,
+                              (text = " Submit ",
+                               backgroundColor = Color.CadetBlue,
+                               textColor = Color.White,
                                horizontalOptions = LayoutOptions.Center,
                                command = (fun _ -> SubmitPassword |> dispatch)) ])
 
     let root model dispatch =
-        View.ContentPage(title = "sign up",
+        View.ContentPage(title = " Sign Up ",
                          content = if model.IsRegistered then registered()
                                    else signUpScreen model dispatch)
