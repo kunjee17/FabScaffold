@@ -3,6 +3,7 @@ module Helper
 open Global
 open Xamarin.Forms
 open Xamarin.Essentials
+open Fabulous.Core
 
 [<Literal>]
 let DebounceNo = 250
@@ -31,3 +32,9 @@ type PageDetail<'a> =
       PageData : 'a }
 
 type PageStack<'a> = PageDetail<'a> list
+
+
+let ofAsyncMsgList (p: Async<'msg list>) : Cmd<'msg> =
+        [ fun dispatch -> async {
+            let! msg = p
+            msg |> List.iter (fun m -> dispatch m)  } |> Async.StartImmediate ]
