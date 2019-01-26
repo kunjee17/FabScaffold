@@ -67,7 +67,8 @@ module Types =
         { Person : Person
           GenderIndex : int
           Title : string
-          PersonUpdated : bool }
+          PersonUpdated : bool
+          IsModelLoaded : bool }
 
 module State =
     open Fabulous.Core
@@ -82,7 +83,8 @@ module State =
             { Person = Person.Empty
               GenderIndex = 0
               Title = ""
-              PersonUpdated = false }
+              PersonUpdated = false
+              IsModelLoaded = false }
 
         let res =
             match model with
@@ -94,7 +96,7 @@ module State =
             { res with Title = editModeTitle true },
             Cmd.ofAsyncMsg (async { let! p = getPersonById key
                                     return UpdateSelectedPerson p })
-        | None -> { res with Title = editModeTitle false }, Cmd.none
+        | None -> { res with Title = editModeTitle false; IsModelLoaded = true }, Cmd.none
 
     let update msg model =
         match msg with
@@ -137,11 +139,27 @@ module State =
                 genderItems
                 |> Array.findIndex (fun (x, _) -> x = p.Gender.ToString())
             { model with Person = p
-                         GenderIndex = genderIndex }, Cmd.none
+                         GenderIndex = genderIndex
+                         IsModelLoaded = true },
+            Cmd.none
 
 module View =
     open Fabulous.DynamicViews
     open Types
+
+    (**
+    * Conditional Events
+    *   let handlerOpt = if condition then None else Some (fun args -> ())
+        View.Entry(?textChanged=handlerOpt)
+    * Another way to look at it
+    * match condition with
+        | true -> View.Entry(...).TextChanged((fun args -> ()))
+        | false -> View.Entry(...)
+    *)
+    //TODO: refactor to view helper
+    let attachChange (condition) (changeEvent) =
+        if condition then debounce DebounceNo changeEvent |> Some
+        else None
 
     let root model (dispatch : Msg -> unit) =
         View.ContentPage
@@ -156,53 +174,49 @@ module View =
                                     View.Entry
                                         (text = model.Person.FirstName,
                                          placeholder = "Enter First Name",
-                                         textChanged = debounce DebounceNo (fun args ->
-                                                           args.NewTextValue
-                                                           |> UpdateFirstName
-                                                           |> dispatch),
+                                         ?textChanged = attachChange
+                                                            model.IsModelLoaded (fun (args : TextChangedEventArgs) ->
+                                                            args.NewTextValue
+                                                            |> UpdateFirstName
+                                                            |> dispatch),
                                          completed = (UpdateFirstName
                                                       >> dispatch))
-
                                     View.Entry
                                         (text = model.Person.LastName,
                                          placeholder = "Enter Last Name",
-                                         textChanged = debounce DebounceNo (fun args ->
+                                         ?textChanged = attachChange model.IsModelLoaded (fun args ->
                                                            args.NewTextValue
                                                            |> UpdateLastName
                                                            |> dispatch),
                                          completed = (UpdateLastName >> dispatch))
-
                                     View.Entry
                                         (text = model.Person.UserName,
                                          placeholder = "Enter Last Name",
-                                         textChanged = debounce DebounceNo (fun args ->
+                                         ?textChanged = attachChange model.IsModelLoaded (fun args ->
                                                            args.NewTextValue
                                                            |> UpdateUserName
                                                            |> dispatch),
                                          completed = (UpdateUserName >> dispatch))
-
                                     View.Entry
                                         (text = model.Person.WebSite,
                                          placeholder = "Enter WebSite",
-                                         textChanged = debounce DebounceNo (fun args ->
+                                         ?textChanged = attachChange model.IsModelLoaded (fun args ->
                                                            args.NewTextValue
                                                            |> UpdateWebSite
                                                            |> dispatch),
                                          completed = (UpdateWebSite >> dispatch))
-
                                     View.Entry
                                         (text = model.Person.Avatar,
                                          placeholder = "Enter Avatar",
-                                         textChanged = debounce DebounceNo (fun args ->
+                                         ?textChanged = attachChange model.IsModelLoaded (fun args ->
                                                            args.NewTextValue
                                                            |> UpdateAvatar
                                                            |> dispatch),
                                          completed = (UpdateAvatar >> dispatch))
-
                                     View.Entry
                                         (text = model.Person.Mobile,
                                          placeholder = "Enter Mobile Number",
-                                         textChanged = debounce DebounceNo (fun args ->
+                                         ?textChanged = attachChange model.IsModelLoaded (fun args ->
                                                            args.NewTextValue
                                                            |> UpdateMobile
                                                            |> dispatch),
@@ -210,7 +224,7 @@ module View =
                                     View.Entry
                                         (text = model.Person.Email,
                                          placeholder = "Enter email",
-                                         textChanged = debounce DebounceNo (fun args ->
+                                         ?textChanged = attachChange model.IsModelLoaded (fun args ->
                                                            args.NewTextValue
                                                            |> UpdateEmail
                                                            |> dispatch),
@@ -219,19 +233,17 @@ module View =
 
                                     View.DatePicker
                                         (date = model.Person.DateOfBirth,
-                                         dateSelected = (fun args ->
+                                         ?dateSelected = attachChange model.IsModelLoaded (fun args ->
                                          dispatch (UpdateBirthDate args.NewDate)),
                                          maximumDate = DateTime.Today,
                                          horizontalOptions = LayoutOptions.Fill)
-
-
                                     View.Picker
                                         (title = "Choose Gender",
                                          textColor = snd
                                                          genderItems.[model.GenderIndex],
                                          selectedIndex = model.GenderIndex,
                                          itemsSource = Array.map fst genderItems,
-                                         selectedIndexChanged = (fun (i, item) ->
+                                         ?selectedIndexChanged = attachChange model.IsModelLoaded (fun (i, item) ->
                                          dispatch (UpdateGender i)))
 
                                     View.StackLayout
