@@ -100,7 +100,7 @@ module View =
              orientation = StackOrientation.Vertical,
              margin = Thickness(0., 10., 0., 10.), spacing = 20.,
              children = [ View.Label
-                              (text = "Campany Name: " + company.Name,
+                              (text = "Company Name: " + company.Name,
                                fontSize = 20)
 
                           View.Label
