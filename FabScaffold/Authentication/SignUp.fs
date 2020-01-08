@@ -63,7 +63,7 @@ module View =
     let registered() =
         View.StackLayout
             (padding = 30., verticalOptions = LayoutOptions.Center,
-             children = [ View.Label("Pass Code is registered - Try Loggin In") ])
+             children = [ View.Label("Pass Code is registered - Try Logging In") ])
 
     let signUpScreen model dispatch =
         View.StackLayout
